@@ -1,0 +1,67 @@
+<html><body><script>
+
+    var cells = []
+    var gridSettings = {x:100,y:100, cellSize: 10}
+    var initialLength = 10
+    var velocity = {x:1, y:0}
+    var speed = 3
+    var apple = null
+    var isGrowing = 0
+
+    function initCells() {
+        cells.push({x: Math.floor(Math.random() * 80)+20, y: Math.floor(Math.random() * 80)+20})
+        for(let i=1;i<initialLength;i++) cells.push({x:cells[cells.length-1].x-1, y:cells[cells.length-1].y})
+    }
+
+    function changeDirection(e) {
+        if(e.code == "ArrowUp") velocity = {x:0,y:-1}
+        if(e.code == "ArrowDown") velocity = {x:0,y:1}
+        if(e.code == "ArrowLeft") velocity = {x:-1,y:0}
+        if(e.code == "ArrowRight") velocity = {x:1,y:0}
+    }
+
+    function updateApple() {
+        apple = ({x: Math.floor(Math.random() * window.innerWidth/gridSettings.cellSize), y: Math.floor(Math.random() * window.innerHeight/gridSettings.cellSize)})
+    }
+
+    function moveSnake() {
+        if(vectorEquality(vectorSum(cells[0], velocity), apple)) {
+            isGrowing = 10
+            updateApple()
+        }
+        cells.unshift(vectorSum(cells[0], velocity))
+        if(isGrowing > 0) isGrowing--
+        else cells.pop()
+    }
+
+    function drawSnake() {
+        let oldContainer = document.querySelector('#container')?.remove()
+        let newContainer = document.createElement('div');
+        newContainer.id = 'container' 
+        cells.forEach(x=>newContainer.appendChild(drawElement(x,'cell','black')))
+        newContainer.appendChild(drawElement(apple,'apple','red'))
+        document.body.appendChild(newContainer)
+    }
+
+    function drawElement(dims, id, color) {
+        let cell = document.createElement('div')
+        cell.style.width = cell.style.height = gridSettings.cellSize
+        cell.style.backgroundColor = color
+        cell.id = id
+        cell.style.left = gridSettings.cellSize*(dims.x-1)
+        cell.style.top = gridSettings.cellSize*(dims.y-1)
+        cell.style.position = 'absolute'
+        return cell
+    }
+
+    function vectorSum(v1,v2) {return {x: v1.x+v2.x, y: v1.y+v2.y}}
+    function vectorEquality(v1,v2) {return v1.x==v2.x&&v1.y==v2.y}
+
+    (function startGame() {
+        initCells()
+        updateApple()
+        document.body.onkeydown = function(e){changeDirection(e)}
+        setInterval(()=>{moveSnake();drawSnake()}, 100/speed)
+    })()
+    
+</script></body></html>
