@@ -1,2 +1,2 @@
 # snake
-a snake game in plain javascript
+a snake game written in plain javascript
