@@ -1,0 +1,143 @@
+<html><body><script>
+    let scoreElm = document.createElement('p')
+    let score = 0
+    let gridDimensions = [20,10]
+    let gridElements = Array(gridDimensions[0]).fill().map(() => Array(gridDimensions[1]).fill(0))
+    let grid = Array(gridDimensions[0]).fill().map(() => Array(gridDimensions[1]).fill(0))
+    let cellSize = 35
+    let offsetx = (window.innerWidth - gridDimensions[1]*cellSize)/2
+    let offsety = (window.innerHeight - gridDimensions[0]*cellSize)/2
+    let currentBlock = null
+    let pieces = [
+        [
+            [0,1,0],
+            [0,1,0],
+            [1,1,0]
+        ],[
+            [0,1,0],
+            [0,1,0],
+            [0,1,1]
+        ],[
+            [0,1,0],
+            [1,1,1],
+            [0,0,0]
+        ],[
+            [0,1,1],
+            [1,1,0],
+            [0,0,0]
+        ],[
+            [1,1],
+            [1,1]
+        ],[
+            [0,1,0,0],
+            [0,1,0,0],
+            [0,1,0,0],
+            [0,1,0,0]
+        ]
+    ]
+
+    function rotate(piece) {
+        if(!isRotatable()) return piece
+        let rotated = Array.from({length: piece.length}, (_, i) => [])
+        for(let i=0; i<piece.length; i++)
+        for(let j=piece.length-1; j>=0; j--)
+            rotated[i].push(piece[j][i])
+        return rotated
+    }
+
+    function isRotatable() {
+        return currentBlock.position.x >= 0 && currentBlock.position.x+currentBlock.piece[0].length < gridDimensions[1]+1
+    }
+
+    function isAbleToMove(block, velocity) {
+        for(let i=0; i<block.piece.length; i++)
+        for(let j=0; j<block.piece.length; j++) {
+            if(block.piece[i][j] == 1)
+            if(!((block.position.x+j + velocity.x >= 0 && block.position.x+j + velocity.x < grid[0].length) &&
+                (block.position.y+i + velocity.y >= 0 && block.position.y+i + velocity.y < grid.length)) ||
+                (grid[block.position.y+i + velocity.y][block.position.x+j + velocity.x] == 1 )) return false
+        }
+        return true
+    }
+
+    function createBlock(){
+        return {piece: pieces[Math.floor(Math.random()*pieces.length)], position: {x:Math.ceil((gridDimensions[1]-4)/2), y:0}}
+    }
+
+    function blast() {
+        let newGrid = grid.reduce((p,c)=> c.every(x=>x==1)?p:[...p,c],[])
+        let rowsBlasted = gridDimensions[0]-newGrid.length
+        score+=rowsBlasted*100
+        scoreElm.innerHTML = score
+        return [...Array(rowsBlasted).fill().map(() => Array(gridDimensions[1]).fill(0)) ,...newGrid]
+    }
+
+    function addBlockToGrid(obj1, obj2, shift){
+        for(let i=0; i<obj1.length; i++)
+        for(let j=0; j<obj1[0].length; j++) {
+            if(obj1[i][j]==1) obj2[i+shift.y][j+shift.x] = obj1[i][j]
+        }
+    }
+
+    function iterate(velocity) {
+        if(isAbleToMove(currentBlock, velocity))
+           currentBlock.position = {x: currentBlock.position.x + velocity.x, y: currentBlock.position.y + velocity.y} 
+        else {
+            if(velocity.y == 1) {
+                if(currentBlock.position.y==0) reset()
+                else {
+                    addBlockToGrid(currentBlock.piece, grid, currentBlock.position)
+                    grid = blast()
+                    currentBlock = createBlock()
+                }
+            }
+        }
+        draw(grid, {x:0,y:0}, 'black', true)
+        draw(currentBlock.piece, currentBlock.position, '#333')
+    }
+
+    function draw(obj, disp, color, drawEmpty = false) {
+        for(let i=0; i<obj.length; i++)
+        for(let j=0; j<obj[0].length; j++) {
+            if(drawEmpty || (!drawEmpty && obj[i][j]==1) )
+                gridElements[i+disp.y][j+disp.x].style.backgroundColor = obj[i][j] == 1 ? color : 'silver'
+        }
+    }
+
+    function reset() {
+        score = 0
+        grid = Array(gridDimensions[0]).fill().map(() => Array(gridDimensions[1]).fill(0))
+    }
+
+    function keyboardController(e) {
+        if(e.code == "ArrowLeft") iterate({x:-1,y:0})
+        if(e.code == "ArrowRight") iterate({x:1,y:0})
+        if(e.code == "ArrowDown") iterate({x:0,y:1})
+        if(e.code == "ArrowUp") currentBlock.piece = rotate(currentBlock.piece)
+    }
+
+    function setStyles() {
+        for(let i=0; i<gridElements.length; i++)
+        for(let j=0; j<gridElements[0].length; j++){
+            let cell = document.createElement('div')
+            cell.style.position = 'absolute'
+            cell.style.left = (offsetx + (j)*cellSize) + 'px'
+            cell.style.top = (offsety + (i)*cellSize) + 'px'
+            cell.style.height = cell.style.width = cellSize + 'px'
+            cell.style.backgroundColor = 'silver'
+            gridElements[i][j] = cell
+            document.body.append(gridElements[i][j])
+        }
+        document.body.style.textAlign = 'center'
+        scoreElm.style.fontSize = '34px'
+        scoreElm.style.fontFamily = 'fantasy'
+        document.body.append(scoreElm)
+    }
+
+    (function startGame(){
+        setStyles()
+        currentBlock = createBlock()
+        document.body.onkeydown = function(e){keyboardController(e)}
+        setInterval(()=>{ iterate({x:0,y:1}) },200)
+    })()
+</script></body></html>
