@@ -1,2 +1,2 @@
-# snake
-snake-game written in plain javascript
+# Games written in javascript
+tetris and snake written in javascript
